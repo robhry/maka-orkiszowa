@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mąka orkiszowa — zamówienia</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .container { width: 100%; max-width: 420px; }
+  .card { background: #fff; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #e8e6e0; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 6px; background: #eef7ee; color: #2e7d32; margin-bottom: 14px; letter-spacing: 0.3px; }
+  .badge-admin { background: #e8f0fe; color: #1a56b0; }
+  h1 { font-size: 19px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 1.25rem; }
+  .price-pill { display: inline-flex; align-items: center; gap: 10px; background: #f5f4f0; border-radius: 8px; padding: 8px 14px; margin-bottom: 1.25rem; }
+  .price-pill .amount { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+  .price-pill .desc { font-size: 12px; color: #666; line-height: 1.3; }
+  label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; margin-top: 14px; letter-spacing: 0.2px; }
+  label:first-of-type { margin-top: 0; }
+  input { width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #e0ddd6; border-radius: 10px; background: #fff; color: #1a1a1a; font-family: inherit; outline: none; transition: border-color 0.15s; }
+  input:focus { border-color: #4a7c4e; }
+  .qty-wrap { display: flex; align-items: center; border: 1px solid #e0ddd6; border-radius: 10px; overflow: hidden; }
+  .qty-wrap input { border: none; text-align: center; font-size: 18px; font-weight: 600; max-width: 80px; }
+  .qty-btn { width: 44px; height: 44px; border: none; background: #f5f4f0; font-size: 20px; color: #444; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; user-select: none; }
+  .qty-btn:active { background: #ebe9e3; }
+  .qty-label { font-size: 13px; color: #888; margin-left: 10px; }
+  .subtotal { font-size: 13px; color: #4a7c4e; font-weight: 500; margin-top: 6px; }
+  .btn { display: block; width: 100%; margin-top: 18px; padding: 12px; font-size: 15px; font-weight: 600; border: none; border-radius: 10px; background: #4a7c4e; color: #fff; cursor: pointer; font-family: inherit; transition: background 0.15s, transform 0.1s; }
+  .btn:hover { background: #3d6b41; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { background: #b0c9b2; cursor: not-allowed; transform: none; }
+  .msg { font-size: 13px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; display: none; line-height: 1.4; }
+  .msg.ok { background: #eef7ee; color: #2e7d32; display: block; }
+  .msg.err { background: #fdecea; color: #c62828; display: block; }
+  .note { font-size: 11px; color: #aaa; margin-top: 10px; line-height: 1.5; }
+  .admin-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f0ede6; gap: 12px; }
+  .admin-row:last-child { border-bottom: none; }
+  .admin-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+  .admin-meta { font-size: 12px; color: #888; margin-top: 2px; }
+  .admin-ts { font-size: 11px; color: #bbb; margin-top: 2px; }
+  .admin-val { font-size: 14px; font-weight: 600; color: #4a7c4e; white-space: nowrap; text-align: right; }
+  .total-bar { background: #f5f4f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 6px 0 0; }
+  .total-bar .lbl { font-size: 13px; color: #666; }
+  .total-bar .val { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .empty { font-size: 14px; color: #bbb; text-align: center; padding: 2rem 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .clear-btn { font-size: 12px; color: #c62828; background: none; border: 1px solid #f5c6c6; border-radius: 8px; padding: 6px 12px; cursor: pointer; margin-top: 12px; font-family: inherit; }
+  .clear-btn:hover { background: #fdecea; }
+  .section-label { font-size: 11px; color: #bbb; letter-spacing: 0.5px; text-transform: uppercase; margin: 16px 0 8px; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="card" style="text-align:center;color:#bbb;padding:2rem;">Ładowanie...</div>
+</div>
+<script>
+// ─────────────────────────────────────────────────────────────────
+// KONFIGURACJA — wklej swój klucz API z jsonbin.io
+const JSONBIN_API_KEY = 'WKLEJ_TUTAJ_SWOJ_KLUCZ_API';
+// ─────────────────────────────────────────────────────────────────
+
+const API = 'https://api.jsonbin.io/v3/b';
+const PRICE = 35;
+const WEIGHT = 2.2;
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getView() {
+  return window.location.hash.replace('#','') === 'admin' ? 'admin' : 'form';
+}
+
+// Bin ID — tworzony raz, zapamiętany w localStorage przeglądarki sprzedającego
+async function getBinId() {
+  const cached = localStorage.getItem('maka_bin_id');
+  if (cached) return cached;
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_API_KEY,
+      'X-Bin-Name': 'maka-orkiszowa',
+      'X-Bin-Private': 'true'
+    },
+    body: JSON.stringify({ orders: [] })
+  });
+  const data = await res.json();
+  const id = data.metadata?.id;
+  if (id) localStorage.setItem('maka_bin_id', id);
+  return id;
+}
+
+async function loadOrders() {
+  const id = await getBinId();
+  const res = await fetch(`${API}/${id}/latest`, {
+    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+  });
+  const data = await res.json();
+  return data.record?.orders || [];
+}
+
+async function saveOrders(orders) {
+  const id = await getBinId();
+  const res = await fetch(`${API}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_API_KEY
+    },
+    body: JSON.stringify({ orders })
+  });
+  return res.ok;
+}
+
+// ── FORMULARZ ────────────────────────────────────────────────────
+
+function renderForm() {
+  document.getElementById('app').innerHTML = `
+    <div class="card">
+      <span class="badge">Zamówienie wstępne</span>
+      <h1>Mąka orkiszowa — świeżo mielona</h1>
+      <p class="sub">Z własnej uprawy, mielona na bieżąco.</p>
+      <div class="price-pill">
+        <div class="amount">35 zł</div>
+        <div class="desc">woreczek 2,2 kg<br>świeżo mielona</div>
+      </div>
+      <label>Ile woreczków?</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="qty" value="1" min="1" max="20" oninput="updateSub()"/>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+        <span class="qty-label">× 2,2 kg</span>
+      </div>
+      <div class="subtotal" id="sub">Razem: 35 zł · 2,2 kg</div>
+      <label style="margin-top:16px;">Imię i nazwisko (jak na FB)</label>
+      <input type="text" id="name" placeholder="np. Jan Kowalski" maxlength="80"/>
+      <button class="btn" id="sbtn" onclick="submitOrder()">Zapisuję się</button>
+      <div class="msg" id="msg"></div>
+      <p class="note">Twoje dane widzi tylko sprzedający. Nie są widoczne dla innych kupujących.</p>
+    </div>`;
+  updateSub();
+}
+
+function changeQty(d) {
+  const el = document.getElementById('qty');
+  el.value = Math.max(1, Math.min(20, (parseInt(el.value)||1) + d));
+  updateSub();
+}
+
+function updateSub() {
+  const q = parseInt(document.getElementById('qty').value)||1;
+  document.getElementById('sub').textContent =
+    `Razem: ${q*PRICE} zł · ${(q*WEIGHT).toFixed(1)} kg`;
+}
+
+async function submitOrder() {
+  const qty  = parseInt(document.getElementById('qty').value)||0;
+  const name = document.getElementById('name').value.trim();
+  const msg  = document.getElementById('msg');
+  const btn  = document.getElementById('sbtn');
+  msg.className = 'msg'; msg.textContent = '';
+  if (qty < 1) { msg.className='msg err'; msg.textContent='Podaj liczbę woreczków.'; return; }
+  if (!name)   { msg.className='msg err'; msg.textContent='Podaj imię i nazwisko.';  return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Zapisuję...';
+  try {
+    const orders = await loadOrders();
+    orders.push({ name, qty, total: qty*PRICE, weight: parseFloat((qty*WEIGHT).toFixed(1)), ts: Date.now() });
+    const ok = await saveOrders(orders);
+    if (ok) {
+      msg.className = 'msg ok';
+      msg.textContent = `Gotowe! Zapisano ${qty} woreczek${qty>1?'ków':''} dla ${name}. Odezwę się wkrótce.`;
+      document.getElementById('qty').value = 1;
+      document.getElementById('name').value = '';
+      updateSub();
+    } else throw new Error();
+  } catch {
+    msg.className = 'msg err';
+    msg.textContent = 'Coś poszło nie tak. Spróbuj jeszcze raz.';
+  }
+  btn.disabled = false; btn.textContent = 'Zapisuję się';
+}
+
+// ── ADMIN ────────────────────────────────────────────────────────
+
+async function renderAdmin() {
+  document.getElementById('app').innerHTML = `
+    <div class="card">
+      <span class="badge badge-admin">Panel sprzedającego</span>
+      <h1>Zamówienia</h1>
+      <div class="empty">Ładowanie...</div>
+    </div>`;
+  let orders = [];
+  try { orders = await loadOrders(); } catch {}
+  const tQty = orders.reduce((s,o)=>s+(o.qty||0),0);
+  const tPln = orders.reduce((s,o)=>s+(o.total||0),0);
+  const tKg  = orders.reduce((s,o)=>s+(o.weight||0),0);
+  const rows = orders.length === 0
+    ? `<div class="empty">Brak zamówień</div>`
+    : [...orders].reverse().map(o=>`
+        <div class="admin-row">
+          <div>
+            <div class="admin-name">${esc(o.name)}</div>
+            <div class="admin-meta">${o.qty} woreczek${o.qty>1?'ków':''} · ${o.weight} kg</div>
+            <div class="admin-ts">${new Date(o.ts).toLocaleString('pl-PL')}</div>
+          </div>
+          <div class="admin-val">${o.total} zł</div>
+        </div>`).join('');
+  document.getElementById('app').innerHTML = `
+    <div class="card">
+      <span class="badge badge-admin">Panel sprzedającego</span>
+      <h1>Zamówienia — mąka orkiszowa</h1>
+      <div class="section-label">Podsumowanie</div>
+      <div class="total-bar"><span class="lbl">Łączna wartość</span><span class="val">${tPln} zł</span></div>
+      <div class="total-bar"><span class="lbl">Łączna waga</span><span class="val">${tKg.toFixed(1)} kg · ${tQty} szt.</span></div>
+      <div class="total-bar"><span class="lbl">Liczba zamówień</span><span class="val">${orders.length} osób</span></div>
+      <div class="section-label" style="margin-top:18px;">Lista zamówień</div>
+      ${rows}
+      ${orders.length>0?`<button class="clear-btn" onclick="clearAll()">Wyczyść wszystkie zamówienia</button>`:''}
+    </div>`;
+}
+
+async function clearAll() {
+  if (!confirm('Usunąć wszystkie zamówienia? Tej operacji nie można cofnąć.')) return;
+  await saveOrders([]);
+  renderAdmin();
+}
+
+window.addEventListener('hashchange', render);
+function render() { getView()==='admin' ? renderAdmin() : renderForm(); }
+render();
+</script>
+</body>
+</html>
