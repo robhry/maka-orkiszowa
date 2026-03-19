@@ -74,24 +74,7 @@ function getView() {
 }
 
 // Bin ID — tworzony raz, zapamiętany w localStorage przeglądarki sprzedającego
-async function getBinId() {
-  const cached = localStorage.getItem('maka_bin_id');
-  if (cached) return cached;
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': JSONBIN_API_KEY,
-      'X-Bin-Name': 'maka-orkiszowa',
-      'X-Bin-Private': 'true'
-    },
-    body: JSON.stringify({ orders: [] })
-  });
-  const data = await res.json();
-  const id = data.metadata?.id;
-  if (id) localStorage.setItem('maka_bin_id', id);
-  return id;
-}
+function getBinId() { return '69bc4b42aa77b81da9fd7920'; }
 
 async function loadOrders() {
   const id = await getBinId();
